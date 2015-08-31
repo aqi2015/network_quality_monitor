@@ -1,0 +1,65 @@
+#!//usr/bin/python
+# conding:utf8
+
+import threading,time,socket,re,json
+
+def getRule(rule_file):
+	dict_rule = {}
+	try:
+		with open(rule_file,'r') as f:
+			for line in f:
+				line = line.split()
+				if not line or re.search(r'^ *#',line[0]):
+					continue
+				else:
+					dict_rule[int(line[0])] = int(line[1])
+	except:
+		print 'please check ' + str(rule_file)
+		exit()
+	return dict_rule
+
+
+def readConf(source_ip,dport_ip):
+	dict_rule_info = {}
+	with open('mail_rule.conf','r') as f:
+		for line in f:
+			line = line.split()
+			if not line or re.search(r'^ *#',line[0]):
+				continue
+			elif len(line) >= 3:
+				if line[0] == source_ip and line[1] == dport_ip:
+					dict_rule_info['dport_ip'] = dport_ip
+					dict_rule_info['dict_rule'] = getRule(line[2])
+					return dict_rule_info
+
+
+def issued_mail_rule(receivedIp):	
+	client_ip = '114.141.159.4'
+	mail_rule = readConf(client_ip, receivedIp)
+#	mail_rule = readConf(client_ip, '103.44.146.2')
+
+	if mail_rule:
+		send = {'action_to_client':'mail_rule',
+			'mail_rule':mail_rule,
+			}
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((client_ip, 9001))
+		sock.send(json.dumps(send))
+
+list_ip = ['103.44.146.2',
+'114.80.245.7',
+'115.238.184.157',
+'125.211.207.193',
+'125.211.208.151',
+'180.153.118.117',
+'180.153.120.110',
+'180.153.123.212',
+'60.206.12.250',
+'61.153.104.29',
+]
+
+for ip in list_ip:
+	issued_mail_rule(ip)
+
+
